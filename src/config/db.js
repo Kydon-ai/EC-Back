@@ -5,11 +5,9 @@ const { dbLogger } = require('../utils/logger');
 const connectDB = async () => {
   try {
     const MONGO_URI = process.env.MONGO_URI || 'mongodb://localhost:27017/ec-backend';
-
+    console.log("连接路径", MONGO_URI)
     // 连接选项
     const options = {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000, // 服务器选择超时时间
       socketTimeoutMS: 45000, // Socket连接超时时间
     };
@@ -41,7 +39,7 @@ const connectDB = async () => {
 
   } catch (error) {
     dbLogger.error('MongoDB connection failed:', { error: error.message, stack: error.stack });
-
+    console.log('MongoDB connection failed:', { error: error.message, stack: error.stack })
     // 实现重试逻辑
     dbLogger.info('Retrying MongoDB connection in 5 seconds...');
     setTimeout(connectDB, 5000);

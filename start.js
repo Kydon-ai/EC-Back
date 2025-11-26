@@ -21,20 +21,20 @@ async function startServer() {
     // 连接数据库
     appLogger.info('Connecting to MongoDB...');
     await connectDB();
-    
+
     // 导入应用程序
     appLogger.info('Initializing Express application...');
     const app = require('./index');
-    
+
     // 获取端口配置
     const PORT = process.env.PORT || 3000;
-    
+
     // 检查是否已经有监听事件，避免重复启动
     const server = app.listen(PORT, () => {
       appLogger.info(`Server started successfully on port ${PORT}`);
       console.log(`Server started successfully on port ${PORT}`);
     });
-    
+
     // 优雅关闭
     process.on('SIGTERM', () => {
       appLogger.info('SIGTERM signal received, shutting down gracefully...');
@@ -43,15 +43,9 @@ async function startServer() {
         process.exit(0);
       });
     });
-    
-    // 设置超时关闭
-    setTimeout(() => {
-      server.close(() => {
-        appLogger.info('Server shutdown timed out');
-        process.exit(1);
-      });
-    }, 10000); // 10秒超时
-    
+
+    // 移除了不合理的自动超时关闭，让服务器可以持续运行
+
   } catch (error) {
     appLogger.error('Failed to start server:', { error: error.message, stack: error.stack });
     console.error('Failed to start server:', error.message);

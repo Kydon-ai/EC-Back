@@ -59,7 +59,24 @@ const ragRoutes = require('./src/routes/ragRoutes');
 app.use('/api/llm', llmRoutes);
 app.use('/api/rag', ragRoutes);
 
+// 根路径测试接口
+// GET http://localhost:3000/
+app.get('/', (req, res) => {
+    res.status(200).json({
+        status: 'success',
+        message: 'EC-Back API Service is running',
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+        availableEndpoints: [
+            '/health',
+            '/api/llm/*',
+            '/api/rag/*'
+        ]
+    });
+});
+
 // 健康检查接口
+// GET http://localhost:3000/health
 app.get('/health', (req, res) => {
     res.status(200).json({
         status: 'success',
