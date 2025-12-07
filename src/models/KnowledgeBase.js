@@ -18,6 +18,11 @@ const KnowledgeBaseSchema = new mongoose.Schema({
     type: Number,
     default: 0
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive'],
+    default: 'active'
+  },
   // 默认是对象字符串
   metadata: {
     type: String,

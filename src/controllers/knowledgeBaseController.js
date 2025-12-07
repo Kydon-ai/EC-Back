@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadDocumentToRagflow, removeDocumentFromRagflow, createKnowledgeBaseToRagflow } from '../services/ragflow/ragflowService.js';
+import { uploadDocumentToRagflow, removeDocumentFromRagflow, createKnowledgeBaseToRagflow, removeKnowledgeBaseFromRagflow } from '../services/ragflow/ragflowService.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import Document from '../models/Document.js';
 import { generateEmbedding } from '../services/ragService.js';
@@ -41,7 +41,8 @@ const createKnowledgeBase = async (req, res) => {
       dataset_id,
       name,
       description,
-      metadata
+      metadata,
+      status: 'active' // 显式设置为活跃状态
     });
 
     res.status(201).json({
@@ -59,7 +60,15 @@ const createKnowledgeBase = async (req, res) => {
 // 获取所有知识库
 const getAllKnowledgeBases = async (req, res) => {
   try {
-    const knowledgeBases = await KnowledgeBase.find().sort({ createdAt: -1 });
+    const { active } = req.query;
+    let query = {};
+
+    // 如果提供了active查询参数，根据其值构建查询条件
+    if (active !== undefined) {
+      query.status = active;
+    }
+
+    const knowledgeBases = await KnowledgeBase.find(query).sort({ createdAt: -1 });
 
     res.status(200).json({
       status: 'success',
@@ -165,14 +174,21 @@ const deleteKnowledgeBase = async (req, res) => {
     // 使用dataset_id查询知识库
     const query = { dataset_id: id };
 
-    // 删除知识库
-    const knowledgeBase = await KnowledgeBase.findOneAndDelete(query);
+    // 查询知识库
+    const knowledgeBase = await KnowledgeBase.findOne(query);
     if (!knowledgeBase) {
       return res.status(404).json({
         status: 'error',
         message: 'Knowledge base not found'
       });
     }
+
+    // 调用RAGFlow API删除知识库
+    await removeKnowledgeBaseFromRagflow(id);
+
+    // 将本地知识库标记为失效，而不是直接删除
+    knowledgeBase.status = 'inactive';
+    await knowledgeBase.save();
 
     // 更新所有关联文档，移除knowledgeBaseId
     await Document.updateMany(
@@ -182,7 +198,7 @@ const deleteKnowledgeBase = async (req, res) => {
 
     res.status(200).json({
       status: 'success',
-      message: 'Knowledge base deleted successfully'
+      message: 'Knowledge base marked as inactive and deleted from RAGFlow'
     });
   } catch (error) {
     res.status(500).json({

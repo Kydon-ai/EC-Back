@@ -106,3 +106,27 @@ export const createKnowledgeBaseToRagflow = async (name) => {
 /**
  * 其他RAGFlow相关操作可以在这里继续添加
  */
+
+/**
+ * 删除RAGFlow中的知识库
+ * @param {string} kbId - 知识库ID
+ * @returns {Promise<Object>} - RAGFlow API响应
+ */
+export const removeKnowledgeBaseFromRagflow = async (kbId) => {
+    try {
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/kb/rm`,
+            { kb_id: [kbId] }, // RAGFlow要求将kb_id作为数组发送
+            {
+                headers: {
+                    'Content-Type': 'application/json;charset=UTF-8',
+                    'Authorization': RAGFLOW_CONFIG.API_KEY
+                }
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('Error removing knowledge base from RAGFlow:', error.response?.data || error.message);
+        throw error;
+    }
+}
