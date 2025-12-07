@@ -72,5 +72,37 @@ export const removeDocumentFromRagflow = async (docIds) => {
 };
 
 /**
+ * 创建知识库到RAGFlow
+ * @param {string} name - 知识库名称
+ * @returns {Promise<Object>} RAGFlow响应
+ */
+export const createKnowledgeBaseToRagflow = async (name) => {
+    try {
+        // 发送请求到RAGFlow
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/kb/create`,
+            {
+                name,
+                parse_type: 1,
+                embd_id: "quentinz/bge-large-zh-v1.5:latest@Ollama",
+                parser_id: "naive",
+                pipeline_id: ""
+            },
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Content-Type': 'application/json;charset=UTF-8'
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow创建知识库失败:', error.response?.data || error.message);
+        throw new Error(`RAGFlow创建知识库失败: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+/**
  * 其他RAGFlow相关操作可以在这里继续添加
  */

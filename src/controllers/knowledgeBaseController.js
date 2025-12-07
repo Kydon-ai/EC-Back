@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadDocumentToRagflow, removeDocumentFromRagflow } from '../services/ragflow/ragflowService.js';
+import { uploadDocumentToRagflow, removeDocumentFromRagflow, createKnowledgeBaseToRagflow } from '../services/ragflow/ragflowService.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import Document from '../models/Document.js';
 import { generateEmbedding } from '../services/ragService.js';
@@ -13,16 +13,22 @@ import { generateEmbedding } from '../services/ragService.js';
  */
 const createKnowledgeBase = async (req, res) => {
   try {
-    const { dataset_id, name, description, metadata } = req.body;
+    const { name, description, metadata } = req.body;
 
-    if (!dataset_id || !name) {
+    if (!name) {
       return res.status(400).json({
         status: 'error',
-        message: 'Dataset ID and name are required'
+        message: 'Name is required'
       });
     }
 
-    // 检查dataset_id是否已存在
+    // 调用RAGFlow创建知识库
+    const ragflowResponse = await createKnowledgeBaseToRagflow(name);
+
+    // 获取RAGFlow返回的知识库ID
+    const dataset_id = ragflowResponse.data.kb_id;
+
+    // 检查dataset_id是否已存在（理论上不应该存在，因为是RAGFlow新生成的）
     const existingKB = await KnowledgeBase.findOne({ dataset_id });
     if (existingKB) {
       return res.status(400).json({
