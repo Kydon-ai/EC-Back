@@ -21,6 +21,10 @@ const DocumentSchema = new mongoose.Schema({
     type: [String],
     default: []
   },
+  knowledgeBaseId: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: 'KnowledgeBase'
+  },
   createdAt: {
     type: Date,
     default: Date.now

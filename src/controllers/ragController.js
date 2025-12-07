@@ -1,17 +1,29 @@
 import Document from '../models/Document.js';
+import KnowledgeBase from '../models/KnowledgeBase.js';
 import { generateEmbedding, searchSimilarDocuments } from '../services/ragService.js';
 import { generateLLMResponse } from '../services/llmService.js';
 
 // 添加文档
 const addDocument = async (req, res) => {
   try {
-    const { title, content, metadata, tags } = req.body;
+    const { title, content, metadata, tags, knowledgeBaseId } = req.body;
 
     if (!title || !content) {
       return res.status(400).json({
         status: 'error',
         message: 'Title and content are required'
       });
+    }
+
+    // 验证知识库是否存在（如果提供了knowledgeBaseId）
+    if (knowledgeBaseId) {
+      const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+      if (!knowledgeBase) {
+        return res.status(404).json({
+          status: 'error',
+          message: 'Knowledge base not found'
+        });
+      }
     }
 
     // 生成文档嵌入（模拟）
@@ -22,8 +34,17 @@ const addDocument = async (req, res) => {
       content,
       metadata: metadata || {},
       tags: tags || [],
-      embedding
+      embedding,
+      knowledgeBaseId
     });
+
+    // 更新知识库文档计数（如果提供了knowledgeBaseId）
+    if (knowledgeBaseId) {
+      await KnowledgeBase.findByIdAndUpdate(
+        knowledgeBaseId,
+        { $inc: { documentCount: 1 }, updatedAt: Date.now() }
+      );
+    }
 
     res.status(201).json({
       status: 'success',

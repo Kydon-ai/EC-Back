@@ -54,10 +54,12 @@ connectDB();
 // 导入路由
 import llmRoutes from './src/routes/llmRoutes.js';
 import ragRoutes from './src/routes/ragRoutes.js';
+import knowledgeBaseRoutes from './src/routes/knowledgeBaseRoutes.js';
 
 // 使用路由
 app.use('/api/llm', llmRoutes);
 app.use('/api/rag', ragRoutes);
+app.use('/api/knowledge-bases', knowledgeBaseRoutes);
 
 // 根路径测试接口
 // GET http://localhost:3000/
@@ -70,7 +72,8 @@ app.get('/', (req, res) => {
         availableEndpoints: [
             '/health',
             '/api/llm/*',
-            '/api/rag/*'
+            '/api/rag/*',
+            '/api/knowledge-bases/*'
         ]
     });
 });
