@@ -212,13 +212,22 @@ const deleteKnowledgeBase = async (req, res) => {
 };
 
 // 为知识库添加文档
+
+
 const addDocumentToKnowledgeBase = async (req, res) => {
   try {
     const { knowledgeBaseId } = req.params;
-    const { title, content, metadata, tags } = req.body;
+    let { title, metadata, tags } = req.body;
+    let content = req.body.content;
 
     // 验证知识库是否存在
-    const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    let knowledgeBase;
+    if (mongoose.Types.ObjectId.isValid(knowledgeBaseId)) {
+      knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    } else {
+      knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
+    }
+
     if (!knowledgeBase) {
       return res.status(404).json({
         status: 'error',
@@ -226,29 +235,49 @@ const addDocumentToKnowledgeBase = async (req, res) => {
       });
     }
 
-    if (!title || !content) {
+    // 如果有上传的文件，处理文件信息
+    if (req.file) {
+      // 如果没有提供标题，使用文件名作为标题
+      if (!title) {
+        title = req.file.originalname.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
+      }
+    }
+
+    if (!title) {
       return res.status(400).json({
         status: 'error',
-        message: 'Title and content are required'
+        message: 'Title is required'
       });
     }
 
-    // 生成文档嵌入
-    const embedding = await generateEmbedding(content);
-
-    // 创建文档
+    // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
     const document = await Document.create({
       title,
-      content,
-      metadata: metadata || {},
+      metadata: metadata || "{}",
       tags: tags || [],
-      embedding,
-      knowledgeBaseId
+      knowledgeBaseId: knowledgeBase._id
     });
+
+    // TODO: 将文件转发到RAGFlow接口进行解析
+    // 这里需要根据RAGFlow的API文档配置具体的接口调用
+    // 示例：
+    // const ragflowResponse = await axios.post('http://ragflow-url/api/documents', {
+    //   file: req.file.buffer,
+    //   filename: req.file.originalname,
+    //   knowledgeBaseId: knowledgeBase._id.toString(),
+    //   documentId: document._id.toString()
+    // }, {
+    //   headers: {
+    //     'Content-Type': 'multipart/form-data'
+    //   }
+    // });
+
+    // 注意：实际实现时需要安装axios依赖：pnpm add axios
+    // 并根据RAGFlow接口要求调整请求参数和格式
 
     // 更新知识库文档计数
     await KnowledgeBase.findByIdAndUpdate(
-      knowledgeBaseId,
+      knowledgeBase._id,
       { $inc: { documentCount: 1 }, updatedAt: Date.now() }
     );
 
@@ -375,10 +404,16 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
 const batchUploadToKnowledgeBase = async (req, res) => {
   try {
     const { knowledgeBaseId } = req.params;
-    const { files } = req.body;
+    const files = req.files;
 
     // 验证知识库是否存在
-    const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    let knowledgeBase;
+    if (mongoose.Types.ObjectId.isValid(knowledgeBaseId)) {
+      knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    } else {
+      knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
+    }
+
     if (!knowledgeBase) {
       return res.status(404).json({
         status: 'error',
@@ -398,28 +433,25 @@ const batchUploadToKnowledgeBase = async (req, res) => {
 
     for (const file of files) {
       try {
-        const { title, content, metadata, tags } = file;
+        // 使用文件名作为标题
+        const title = file.originalname.replace(/\.[^/.]+$/, ""); // 移除文件扩展名
 
-        if (!title || !content) {
-          errors.push({
-            file: title || 'unknown',
-            error: 'Title and content are required'
-          });
-          continue;
-        }
+        // 保存文件信息到元数据
+        const metadata = {
+          filename: file.originalname,
+          mimetype: file.mimetype,
+          fileSize: file.size
+        };
 
-        // 生成文档嵌入
-        const embedding = await generateEmbedding(content);
-
-        // 创建文档
+        // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
         const document = await Document.create({
           title,
-          content,
-          metadata: metadata || {},
-          tags: tags || [],
-          embedding,
-          knowledgeBaseId
+          metadata,
+          knowledgeBaseId: knowledgeBase._id
         });
+
+        // TODO: 将文件转发到RAGFlow接口进行解析
+        // 这里需要根据RAGFlow的API文档配置具体的接口调用
 
         uploadedDocuments.push({
           id: document._id,
@@ -428,7 +460,7 @@ const batchUploadToKnowledgeBase = async (req, res) => {
         });
       } catch (error) {
         errors.push({
-          file: file.title || 'unknown',
+          file: file.originalname || 'unknown',
           error: error.message
         });
       }
@@ -437,7 +469,7 @@ const batchUploadToKnowledgeBase = async (req, res) => {
     // 更新知识库文档计数
     if (uploadedDocuments.length > 0) {
       await KnowledgeBase.findByIdAndUpdate(
-        knowledgeBaseId,
+        knowledgeBase._id,
         { $inc: { documentCount: uploadedDocuments.length }, updatedAt: Date.now() }
       );
     }
