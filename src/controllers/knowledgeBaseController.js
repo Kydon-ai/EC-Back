@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
-import { uploadDocumentToRagflow } from '../services/ragflow/ragflowService.js';
+import { uploadDocumentToRagflow, removeDocumentFromRagflow } from '../services/ragflow/ragflowService.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import Document from '../models/Document.js';
 import { generateEmbedding } from '../services/ragService.js';
@@ -230,10 +230,13 @@ const addDocumentToKnowledgeBase = async (req, res) => {
 
     // 调用RAGFlow上传文档
     const ragflowResponse = await uploadDocumentToRagflow(req.file, knowledgeBaseId);
+    console.log("查看响应数据：", ragflowResponse)
+    // 获取RAGFlow返回的文档ID
+    const ragflowDocumentId = ragflowResponse.data[0].id;
 
-    // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
+    // 创建文档（使用RAGFlow返回的ID作为UUID，不包含内容和嵌入，由RAGFlow后续解析）
     const document = await Document.create({
-      uuid: uuidv4(),
+      uuid: ragflowDocumentId,
       title,
       metadata: metadata || "{}",
       tags: tags || [],
@@ -343,6 +346,9 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
       });
     }
 
+    // 先从RAGFlow中删除文档
+    await removeDocumentFromRagflow([documentId]);
+
     // 移除文档的知识库关联
     await Document.findOneAndUpdate(
       { uuid: documentId },
@@ -406,11 +412,14 @@ const batchUploadToKnowledgeBase = async (req, res) => {
         };
 
         // 先上传到RAGFlow
-        await uploadDocumentToRagflow(file, knowledgeBaseId);
+        const ragflowResponse = await uploadDocumentToRagflow(file, knowledgeBaseId);
 
-        // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
+        // 获取RAGFlow返回的文档ID
+        const ragflowDocumentId = ragflowResponse.data.data[0].id;
+
+        // 创建文档（使用RAGFlow返回的ID作为UUID，不包含内容和嵌入，由RAGFlow后续解析）
         const document = await Document.create({
-          uuid: uuidv4(),
+          uuid: ragflowDocumentId,
           title,
           metadata,
           knowledgeBaseId: knowledgeBaseId

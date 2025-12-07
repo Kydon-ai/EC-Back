@@ -46,5 +46,31 @@ export const uploadDocumentToRagflow = async (file, knowledgeBaseId) => {
 };
 
 /**
+ * 从RAGFlow删除文档
+ * @param {string[]} docIds - 要删除的文档ID数组
+ * @returns {Promise<Object>} RAGFlow响应
+ */
+export const removeDocumentFromRagflow = async (docIds) => {
+    try {
+        // 发送请求到RAGFlow
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/document/rm`,
+            { doc_id: docIds },
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Content-Type': 'application/json;charset=UTF-8'
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow删除文档失败:', error.response?.data || error.message);
+        throw new Error(`RAGFlow删除失败: ${error.response?.data?.message || error.message}`);
+    }
+};
+
+/**
  * 其他RAGFlow相关操作可以在这里继续添加
  */
