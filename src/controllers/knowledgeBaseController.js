@@ -69,18 +69,8 @@ const getAllKnowledgeBases = async (req, res) => {
 const getKnowledgeBase = async (req, res) => {
   try {
     const { id } = req.params;
-    let knowledgeBase;
-
-    // 检查是否是有效的ObjectId
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      // 如果是有效的ObjectId，先尝试用_id查询
-      knowledgeBase = await KnowledgeBase.findById(id);
-    }
-
-    // 如果没有找到，再尝试用dataset_id查询
-    if (!knowledgeBase) {
-      knowledgeBase = await KnowledgeBase.findOne({ dataset_id: id });
-    }
+    // 使用dataset_id查询知识库
+    const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: id });
 
     if (!knowledgeBase) {
       return res.status(404).json({
@@ -131,16 +121,9 @@ const updateKnowledgeBase = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, metadata } = req.body;
-    let query;
 
-    // 检查是否是有效的ObjectId
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      // 如果是有效的ObjectId，使用_id查询
-      query = { _id: id };
-    } else {
-      // 否则使用dataset_id查询
-      query = { dataset_id: id };
-    }
+    // 使用dataset_id查询知识库
+    const query = { dataset_id: id };
 
     const knowledgeBase = await KnowledgeBase.findOneAndUpdate(
       query,
@@ -171,18 +154,8 @@ const updateKnowledgeBase = async (req, res) => {
 const deleteKnowledgeBase = async (req, res) => {
   try {
     const { id } = req.params;
-    let query;
-    let knowledgeBaseId;
-
-    // 检查是否是有效的ObjectId
-    if (mongoose.Types.ObjectId.isValid(id)) {
-      // 如果是有效的ObjectId，使用_id查询
-      query = { _id: id };
-      knowledgeBaseId = id;
-    } else {
-      // 否则使用dataset_id查询
-      query = { dataset_id: id };
-    }
+    // 使用dataset_id查询知识库
+    const query = { dataset_id: id };
 
     // 删除知识库
     const knowledgeBase = await KnowledgeBase.findOneAndDelete(query);
@@ -221,12 +194,7 @@ const addDocumentToKnowledgeBase = async (req, res) => {
     let content = req.body.content;
 
     // 验证知识库是否存在
-    let knowledgeBase;
-    if (mongoose.Types.ObjectId.isValid(knowledgeBaseId)) {
-      knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
-    } else {
-      knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
-    }
+    const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
 
     if (!knowledgeBase) {
       return res.status(404).json({
@@ -304,7 +272,7 @@ const getDocumentsInKnowledgeBase = async (req, res) => {
     const { page = 1, limit = 10, tags } = req.query;
 
     // 验证知识库是否存在
-    const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
     if (!knowledgeBase) {
       return res.status(404).json({
         status: 'error',
@@ -355,7 +323,7 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
     const { knowledgeBaseId, documentId } = req.params;
 
     // 验证知识库是否存在
-    const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+    const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
     if (!knowledgeBase) {
       return res.status(404).json({
         status: 'error',
@@ -383,8 +351,8 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
     );
 
     // 更新知识库文档计数
-    await KnowledgeBase.findByIdAndUpdate(
-      knowledgeBaseId,
+    await KnowledgeBase.findOneAndUpdate(
+      { dataset_id: knowledgeBaseId },
       { $inc: { documentCount: -1 }, updatedAt: Date.now() }
     );
 
@@ -407,12 +375,7 @@ const batchUploadToKnowledgeBase = async (req, res) => {
     const files = req.files;
 
     // 验证知识库是否存在
-    let knowledgeBase;
-    if (mongoose.Types.ObjectId.isValid(knowledgeBaseId)) {
-      knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
-    } else {
-      knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
-    }
+    const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
 
     if (!knowledgeBase) {
       return res.status(404).json({

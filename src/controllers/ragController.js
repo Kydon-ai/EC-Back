@@ -17,7 +17,7 @@ const addDocument = async (req, res) => {
 
     // 验证知识库是否存在（如果提供了knowledgeBaseId）
     if (knowledgeBaseId) {
-      const knowledgeBase = await KnowledgeBase.findById(knowledgeBaseId);
+      const knowledgeBase = await KnowledgeBase.findOne({ dataset_id: knowledgeBaseId });
       if (!knowledgeBase) {
         return res.status(404).json({
           status: 'error',
@@ -40,8 +40,8 @@ const addDocument = async (req, res) => {
 
     // 更新知识库文档计数（如果提供了knowledgeBaseId）
     if (knowledgeBaseId) {
-      await KnowledgeBase.findByIdAndUpdate(
-        knowledgeBaseId,
+      await KnowledgeBase.findOneAndUpdate(
+        { dataset_id: knowledgeBaseId },
         { $inc: { documentCount: 1 }, updatedAt: Date.now() }
       );
     }
