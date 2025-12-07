@@ -1,4 +1,6 @@
 import mongoose from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
+import { uploadDocumentToRagflow } from '../services/ragflow/ragflowService.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import Document from '../models/Document.js';
 import { generateEmbedding } from '../services/ragService.js';
@@ -218,34 +220,29 @@ const addDocumentToKnowledgeBase = async (req, res) => {
       });
     }
 
+    // 先上传到RAGFlow
+    if (!req.file) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'File is required for RAGFlow processing'
+      });
+    }
+
+    // 调用RAGFlow上传文档
+    const ragflowResponse = await uploadDocumentToRagflow(req.file, knowledgeBaseId);
+
     // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
     const document = await Document.create({
+      uuid: uuidv4(),
       title,
       metadata: metadata || "{}",
       tags: tags || [],
-      knowledgeBaseId: knowledgeBase._id
+      knowledgeBaseId: knowledgeBaseId
     });
 
-    // TODO: 将文件转发到RAGFlow接口进行解析
-    // 这里需要根据RAGFlow的API文档配置具体的接口调用
-    // 示例：
-    // const ragflowResponse = await axios.post('http://ragflow-url/api/documents', {
-    //   file: req.file.buffer,
-    //   filename: req.file.originalname,
-    //   knowledgeBaseId: knowledgeBase._id.toString(),
-    //   documentId: document._id.toString()
-    // }, {
-    //   headers: {
-    //     'Content-Type': 'multipart/form-data'
-    //   }
-    // });
-
-    // 注意：实际实现时需要安装axios依赖：pnpm add axios
-    // 并根据RAGFlow接口要求调整请求参数和格式
-
     // 更新知识库文档计数
-    await KnowledgeBase.findByIdAndUpdate(
-      knowledgeBase._id,
+    await KnowledgeBase.findOneAndUpdate(
+      { dataset_id: knowledgeBaseId },
       { $inc: { documentCount: 1 }, updatedAt: Date.now() }
     );
 
@@ -253,6 +250,7 @@ const addDocumentToKnowledgeBase = async (req, res) => {
       status: 'success',
       document: {
         id: document._id,
+        uuid: document.uuid,
         title: document.title,
         createdAt: document.createdAt
       }
@@ -303,6 +301,7 @@ const getDocumentsInKnowledgeBase = async (req, res) => {
       totalPages: Math.ceil(totalDocuments / limit),
       documents: documents.map(doc => ({
         id: doc._id,
+        uuid: doc.uuid,
         title: doc.title,
         content: doc.content.substring(0, 200) + '...',
         tags: doc.tags,
@@ -333,7 +332,7 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
 
     // 验证文档是否存在且属于该知识库
     const document = await Document.findOne({
-      _id: documentId,
+      uuid: documentId,
       knowledgeBaseId
     });
 
@@ -345,8 +344,8 @@ const removeDocumentFromKnowledgeBase = async (req, res) => {
     }
 
     // 移除文档的知识库关联
-    await Document.findByIdAndUpdate(
-      documentId,
+    await Document.findOneAndUpdate(
+      { uuid: documentId },
       { knowledgeBaseId: null }
     );
 
@@ -406,18 +405,20 @@ const batchUploadToKnowledgeBase = async (req, res) => {
           fileSize: file.size
         };
 
+        // 先上传到RAGFlow
+        await uploadDocumentToRagflow(file, knowledgeBaseId);
+
         // 创建文档（不包含内容和嵌入，由RAGFlow后续解析）
         const document = await Document.create({
+          uuid: uuidv4(),
           title,
           metadata,
-          knowledgeBaseId: knowledgeBase._id
+          knowledgeBaseId: knowledgeBaseId
         });
-
-        // TODO: 将文件转发到RAGFlow接口进行解析
-        // 这里需要根据RAGFlow的API文档配置具体的接口调用
 
         uploadedDocuments.push({
           id: document._id,
+          uuid: document.uuid,
           title: document.title,
           createdAt: document.createdAt
         });
@@ -431,8 +432,8 @@ const batchUploadToKnowledgeBase = async (req, res) => {
 
     // 更新知识库文档计数
     if (uploadedDocuments.length > 0) {
-      await KnowledgeBase.findByIdAndUpdate(
-        knowledgeBase._id,
+      await KnowledgeBase.findOneAndUpdate(
+        { dataset_id: knowledgeBaseId },
         { $inc: { documentCount: uploadedDocuments.length }, updatedAt: Date.now() }
       );
     }

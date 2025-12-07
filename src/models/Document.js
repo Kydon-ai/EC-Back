@@ -1,6 +1,11 @@
 import mongoose from 'mongoose';
 
 const DocumentSchema = new mongoose.Schema({
+  uuid: {
+    type: String,
+    required: true,
+    unique: true
+  },
   title: {
     type: String,
     required: true
@@ -22,7 +27,7 @@ const DocumentSchema = new mongoose.Schema({
     default: []
   },
   knowledgeBaseId: {
-    type: mongoose.Schema.Types.ObjectId,
+    type: String,
     ref: 'KnowledgeBase'
   },
   createdAt: {

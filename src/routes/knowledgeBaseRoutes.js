@@ -36,7 +36,7 @@ router.post('/:knowledgeBaseId/batch-upload', upload.array('files'), knowledgeBa
 router.get('/:knowledgeBaseId/documents', knowledgeBaseController.getDocumentsInKnowledgeBase);
 
 // 从知识库中移除文档
-router.delete('/:knowledgeBaseId/documents/:documentId', knowledgeBaseController.removeDocumentFromKnowledgeBase);
+router.delete('/:knowledgeBaseId/remove-document/:documentId', knowledgeBaseController.removeDocumentFromKnowledgeBase);
 
 
 export default router;
