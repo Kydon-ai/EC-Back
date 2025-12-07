@@ -130,3 +130,29 @@ export const removeKnowledgeBaseFromRagflow = async (kbId) => {
         throw error;
     }
 }
+
+/**
+ * 调用RAGFlow的SSE接口获取基于RAG的回答
+ * @param {Object} params - 查询参数
+ * @returns {Promise<ReadableStream>} - 可读流
+ */
+export const getRagflowSSEResponse = async (params) => {
+    try {
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/conversation/completion`,
+            params,
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept': '*/*'
+                },
+                responseType: 'stream'
+            }
+        );
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow SSE请求失败:', error.response?.data || error.message);
+        throw error;
+    }
+}

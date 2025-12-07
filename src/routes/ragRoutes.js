@@ -19,4 +19,7 @@ router.get('/documents/:id', ragController.getDocument);
 // 删除文档
 router.delete('/documents/:id', ragController.deleteDocument);
 
+// 基于RAG的SSE回答
+router.post('/conversation/completion', ragController.generateRAGSSEResponse);
+
 export default router;

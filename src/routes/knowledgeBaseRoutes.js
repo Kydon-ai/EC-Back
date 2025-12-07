@@ -21,7 +21,7 @@ router.get('/:id', knowledgeBaseController.getKnowledgeBase);
 // 根据dataset_id获取知识库
 // router.get('/dataset/:dataset_id', knowledgeBaseController.getKnowledgeBaseByDatasetId);
 
-// 更新知识库
+// 更新知识库  TODO:一般知识库不会再修改基础信息了，最后再做
 router.put('/:id', knowledgeBaseController.updateKnowledgeBase);
 
 // 删除知识库
