@@ -1,5 +1,5 @@
-const mongoose = require('mongoose');
-const { dbLogger } = require('../utils/logger');
+import mongoose from 'mongoose';
+import { dbLogger } from '../utils/logger.js';
 
 // 数据库连接配置
 const connectDB = async () => {
@@ -51,4 +51,4 @@ const getConnectionStatus = () => {
   return mongoose.connection.readyState;
 };
 
-module.exports = { connectDB, getConnectionStatus };
+export { connectDB, getConnectionStatus };

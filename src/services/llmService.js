@@ -47,7 +47,7 @@ const batchGenerateResponses = async (messageBatches) => {
   }
 };
 
-module.exports = {
+export {
   generateLLMResponse,
   batchGenerateResponses
 };

@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const DocumentSchema = new mongoose.Schema({
   title: {
@@ -31,4 +31,4 @@ const DocumentSchema = new mongoose.Schema({
   }
 });
 
-module.exports = mongoose.model('Document', DocumentSchema);
+export default mongoose.model('Document', DocumentSchema);

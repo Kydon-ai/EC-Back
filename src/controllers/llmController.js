@@ -1,11 +1,6 @@
-const Message = require('../models/Message');
-const { generateLLMResponse } = require('../services/llmService');
-// 使用动态导入代替require来避免ES模块兼容性问题
-let uuidv4;
-(async () => {
-  const { v4 } = await import('uuid');
-  uuidv4 = v4;
-})();
+import Message from '../models/Message.js';
+import { generateLLMResponse } from '../services/llmService.js';
+import { v4 as uuidv4 } from 'uuid';
 
 // 创建对话
 const createConversation = async (req, res) => {
@@ -168,7 +163,7 @@ const getUserConversations = async (req, res) => {
   }
 };
 
-module.exports = {
+export {
   createConversation,
   continueConversation,
   getConversationHistory,

@@ -1,7 +1,7 @@
 // 服务器启动脚本
 
-const dotenv = require('dotenv');
-const { appLogger } = require('./src/utils/logger');
+import dotenv from 'dotenv';
+import { appLogger } from './src/utils/logger.js';
 
 // 加载环境变量
 try {
@@ -14,7 +14,7 @@ try {
 }
 
 // 连接数据库
-const { connectDB } = require('./src/config/db');
+import { connectDB } from './src/config/db.js';
 
 async function startServer() {
   try {
@@ -24,7 +24,7 @@ async function startServer() {
 
     // 导入应用程序
     appLogger.info('Initializing Express application...');
-    const app = require('./index');
+    const { default: app } = await import('./index.js');
 
     // 获取端口配置
     const PORT = process.env.PORT || 3000;

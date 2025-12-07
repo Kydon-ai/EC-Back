@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const llmController = require('../controllers/llmController');
-const { validateCreateConversation, validateContinueConversation } = require('../middleware/validation');
+import * as llmController from '../controllers/llmController.js';
+import { validateCreateConversation, validateContinueConversation } from '../middleware/validation.js';
 
 // LLM对话相关路由
 // 创建新对话
@@ -16,4 +16,4 @@ router.get('/conversations/:conversationId', llmController.getConversationHistor
 // 获取用户所有对话列表
 router.get('/conversations', llmController.getUserConversations);
 
-module.exports = router;
+export default router;

@@ -1,7 +1,7 @@
-const express = require('express');
+import express from 'express';
 const router = express.Router();
-const ragController = require('../controllers/ragController');
-const { validateAddDocument, validateSearchRequest } = require('../middleware/validation');
+import * as ragController from '../controllers/ragController.js';
+import { validateAddDocument, validateSearchRequest } from '../middleware/validation.js';
 
 // RAG服务相关路由
 // 添加文档
@@ -19,4 +19,4 @@ router.get('/documents/:id', ragController.getDocument);
 // 删除文档
 router.delete('/documents/:id', ragController.deleteDocument);
 
-module.exports = router;
+export default router;

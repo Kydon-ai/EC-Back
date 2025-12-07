@@ -1,8 +1,12 @@
-const winston = require('winston');
-const fs = require('fs');
-const path = require('path');
+import winston from 'winston';
+import fs from 'fs';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
 
 // 创建日志目录
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const logDir = path.join(__dirname, '../../logs');
 if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir, { recursive: true });
@@ -89,39 +93,36 @@ const dbLogger = winston.createLogger({
 });
 
 // 导出日志器
-module.exports = {
-  appLogger,
-  apiLogger,
-  dbLogger,
-  // 日志中间件
-  logRequest: (req, res, next) => {
-    // 记录请求开始
-    const startTime = Date.now();
-    const { method, originalUrl, ip } = req;
-    
-    // 响应结束时记录日志
-    res.on('finish', () => {
-      const duration = Date.now() - startTime;
-      const statusCode = res.statusCode;
-      
-      // 根据状态码确定日志级别
-      const logLevel = statusCode >= 500 ? 'error' : 
-                       statusCode >= 400 ? 'warn' : 'info';
-      
-      // 构建日志消息
-      const logMessage = {
-        method,
-        url: originalUrl,
-        status: statusCode,
-        duration: `${duration}ms`,
-        ip,
-        userAgent: req.headers['user-agent']
-      };
-      
-      // 记录日志
-      apiLogger[logLevel](JSON.stringify(logMessage));
-    });
-    
-    next();
-  }
-};
+export { appLogger, apiLogger, dbLogger };
+
+// 日志中间件
+export const logRequest = (req, res, next) => {
+  // 记录请求开始
+  const startTime = Date.now();
+  const { method, originalUrl, ip } = req;
+
+  // 响应结束时记录日志
+  res.on('finish', () => {
+    const duration = Date.now() - startTime;
+    const statusCode = res.statusCode;
+
+    // 根据状态码确定日志级别
+    const logLevel = statusCode >= 500 ? 'error' :
+      statusCode >= 400 ? 'warn' : 'info';
+
+    // 构建日志消息
+    const logMessage = {
+      method,
+      url: originalUrl,
+      status: statusCode,
+      duration: `${duration}ms`,
+      ip,
+      userAgent: req.headers['user-agent']
+    };
+
+    // 记录日志
+    apiLogger[logLevel](JSON.stringify(logMessage));
+  });
+
+  next();
+}

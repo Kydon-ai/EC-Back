@@ -1,12 +1,12 @@
-const express = require('express');
-const dotenv = require('dotenv');
-const { connectDB } = require('./src/config/db');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const { errorHandler, notFoundHandler } = require('./src/middleware/errorHandler');
-const rateLimit = require('express-rate-limit');
-const { appLogger, logRequest } = require('./src/utils/logger');
+import express from 'express';
+import dotenv from 'dotenv';
+import { connectDB } from './src/config/db.js';
+import cors from 'cors';
+import helmet from 'helmet';
+import morgan from 'morgan';
+import { errorHandler, notFoundHandler } from './src/middleware/errorHandler.js';
+import rateLimit from 'express-rate-limit';
+import { appLogger, logRequest } from './src/utils/logger.js';
 
 // 加载环境变量
 dotenv.config();
@@ -19,7 +19,7 @@ app.use(express.json());
 
 // 配置CORS
 const corsOptions = {
-    origin: ['http://localhost:3000', 'http://localhost:3001'], // 允许的前端域名
+    origin: ['http://localhost:3000', 'http://localhost:3001', 'http://localhost:5173'], // 允许的前端域名
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
     credentials: true
@@ -52,8 +52,8 @@ app.use('/api', limiter);
 connectDB();
 
 // 导入路由
-const llmRoutes = require('./src/routes/llmRoutes');
-const ragRoutes = require('./src/routes/ragRoutes');
+import llmRoutes from './src/routes/llmRoutes.js';
+import ragRoutes from './src/routes/ragRoutes.js';
 
 // 使用路由
 app.use('/api/llm', llmRoutes);
@@ -111,4 +111,4 @@ app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
 });
 
-module.exports = app;
+export default app;

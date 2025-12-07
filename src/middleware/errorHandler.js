@@ -1,4 +1,4 @@
-const { appLogger } = require('../utils/logger');
+import { appLogger } from '../utils/logger.js';
 
 // 全局错误处理中间件
 const errorHandler = (err, req, res, next) => {
@@ -118,4 +118,4 @@ const notFoundHandler = (req, res, next) => {
   });
 };
 
-module.exports = { errorHandler, notFoundHandler };
+export { errorHandler, notFoundHandler };

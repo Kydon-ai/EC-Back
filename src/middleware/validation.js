@@ -91,7 +91,7 @@ const validateSearchRequest = (req, res, next) => {
   next();
 };
 
-module.exports = {
+export {
   validateCreateConversation,
   validateContinueConversation,
   validateAddDocument,
