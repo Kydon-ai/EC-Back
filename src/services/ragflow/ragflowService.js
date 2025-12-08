@@ -156,3 +156,52 @@ export const getRagflowSSEResponse = async (params) => {
         throw error;
     }
 }
+
+/**
+ * 设置RAGFlow中的对话
+ * @param {Object} params - 设置对话的参数
+ * @param {string} params.dialog_id - 对话ID
+ * @param {string} params.conversation_id - 会话ID
+ * @param {string} params.name - 对话名称
+ * @param {string} params.user_id - 用户ID
+ * @param {Array} params.message - 消息数组
+ * @returns {Promise<Object>} - RAGFlow API响应
+ */
+export const setConversationToRagflow = async (params) => {
+    try {
+        // name 充当content
+        const { dialog_id, conversation_id, name, user_id } = params;
+
+        // 构建请求体，根据curl示例设置参数
+        const requestBody = {
+            dialog_id,
+            name,
+            is_new: true, // 根据curl示例固定为true
+            conversation_id,
+            message: [{
+                role: 'assistant',
+                content: name,
+                conversationId: conversation_id
+            }],
+            reference: [],
+            user_id
+        };
+
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/conversation/set`,
+            requestBody,
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json, text/plain, */*'
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow设置对话失败:', error.response?.data || error.message);
+        throw error;
+    }
+}

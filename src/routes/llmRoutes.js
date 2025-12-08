@@ -16,4 +16,7 @@ router.get('/conversations/:conversationId', llmController.getConversationHistor
 // 获取用户所有对话列表
 router.get('/conversations', llmController.getUserConversations);
 
+// 申请一次对话
+router.post('/conversation/set', llmController.setConversation);
+
 export default router;

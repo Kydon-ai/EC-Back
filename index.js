@@ -57,8 +57,11 @@ import ragRoutes from './src/routes/ragRoutes.js';
 import knowledgeBaseRoutes from './src/routes/knowledgeBaseRoutes.js';
 
 // 使用路由
+// 对话
 app.use('/api/llm', llmRoutes);
+// rag
 app.use('/api/rag', ragRoutes);
+// 知识库
 app.use('/api/knowledge-bases', knowledgeBaseRoutes);
 
 // 根路径测试接口

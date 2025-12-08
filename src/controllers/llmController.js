@@ -1,5 +1,6 @@
 import Message from '../models/Message.js';
 import { generateLLMResponse } from '../services/llmService.js';
+import { setConversationToRagflow } from '../services/ragflow/ragflowService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // 创建对话
@@ -145,10 +146,12 @@ const getConversationHistory = async (req, res) => {
 // 获取用户的所有对话
 const getUserConversations = async (req, res) => {
   try {
-    // 这里可以根据用户ID过滤，目前返回所有对话的ID
+    // 这里应该根据用户ID获取对话列表
+    // 暂时返回所有对话
     const conversations = await Message.aggregate([
-      { $group: { _id: '$conversationId' } },
-      { $project: { conversationId: '$_id', _id: 0 } }
+      { $group: { _id: '$conversationId', createdAt: { $min: '$createdAt' } } },
+      { $sort: { createdAt: -1 } },
+      { $project: { conversationId: '$_id', createdAt: 1, _id: 0 } }
     ]);
 
     res.status(200).json({
@@ -163,9 +166,43 @@ const getUserConversations = async (req, res) => {
   }
 };
 
+// 设置对话
+const setConversation = async (req, res) => {
+  try {
+    const { dialog_id, conversation_id, name, user_id } = req.body;
+
+    // 验证必要参数
+    if (!dialog_id || !conversation_id || !name) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'dialog_id、conversation_id、name和content是必需的'
+      });
+    }
+
+    // 调用RAGFlow的设置对话接口
+    const response = await setConversationToRagflow({
+      dialog_id,
+      conversation_id,
+      name,
+      user_id
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: response
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export {
   createConversation,
   continueConversation,
   getConversationHistory,
-  getUserConversations
+  getUserConversations,
+  setConversation
 };
