@@ -468,6 +468,14 @@ const removeConversations = async (req, res) => {
       dialog_id: dialog_id ? dialog_id : '' // 如果没有提供dialog_id，使用空字符串
     });
 
+    // 删除本地的对话记录和相关消息
+    await Promise.all([
+      // 删除本地对话记录
+      Conversation.deleteMany({ id: { $in: conversation_ids } }),
+      // 删除与这些对话相关的所有消息
+      Message.deleteMany({ conversationId: { $in: conversation_ids } })
+    ]);
+
     res.status(200).json({
       status: 'success',
       data: response
