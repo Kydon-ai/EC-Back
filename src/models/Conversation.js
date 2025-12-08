@@ -1,5 +1,29 @@
 import mongoose from 'mongoose';
 
+const MessageSchema = new mongoose.Schema({
+  role: {
+    type: String,
+    required: true,
+    enum: ['user', 'assistant']
+  },
+  content: {
+    type: String,
+    required: true
+  },
+  metadata: {
+    type: mongoose.Schema.Types.Mixed,
+    default: {}
+  },
+  reference: {
+    type: [mongoose.Schema.Types.Mixed],
+    default: []
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+});
+
 const ConversationSchema = new mongoose.Schema({
   id: {
     type: String,
@@ -35,7 +59,8 @@ const ConversationSchema = new mongoose.Schema({
     type: String,
     required: true
   },
-  // 完整消息内容和引用将存储在Message模型中
+  // 完整消息内容存储在messages字段中
+  messages: [MessageSchema],
   message_count: {
     type: Number,
     default: 0

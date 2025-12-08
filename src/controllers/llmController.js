@@ -1,7 +1,7 @@
 import Message from '../models/Message.js';
 import Conversation from '../models/Conversation.js';
 import { generateLLMResponse } from '../services/llmService.js';
-import { setConversationToRagflow, removeConversationsFromRagflow, getConversationsFromRagflow } from '../services/ragflow/ragflowService.js';
+import { setConversationToRagflow, removeConversationsFromRagflow, getConversationsFromRagflow, getConversationFromRagflow } from '../services/ragflow/ragflowService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // 创建对话
@@ -322,6 +322,33 @@ const getConversations = async (req, res) => {
   }
 };
 
+// 获取对话详情
+const getConversation = async (req, res) => {
+  try {
+    const { conversation_id } = req.query;
+
+    // 验证必要参数
+    if (!conversation_id) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'conversation_id是必需的参数'
+      });
+    }
+
+    // 调用RAGFlow的获取对话详情接口
+    const response = await getConversationFromRagflow(conversation_id);
+
+    // 将结果原封不动地返回给前端
+    res.status(200).json(response);
+  } catch (error) {
+    console.error('获取对话详情失败:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export {
   createConversation,
   continueConversation,
@@ -329,5 +356,6 @@ export {
   getUserConversations,
   setConversation,
   removeConversations,
-  getConversations
+  getConversations,
+  getConversation
 };

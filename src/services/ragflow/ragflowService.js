@@ -268,3 +268,30 @@ export const getConversationsFromRagflow = async (dialog_id) => {
         throw error;
     }
 }
+
+/**
+ * 获取RAGFlow中的对话详情
+ * @param {string} conversation_id - 对话ID
+ * @returns {Promise<Object>} - RAGFlow API响应
+ */
+export const getConversationFromRagflow = async (conversation_id) => {
+    try {
+        const response = await axios.get(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/conversation/get`,
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Accept': 'application/json, text/plain, */*'
+                },
+                params: {
+                    conversation_id
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow获取对话详情失败:', error.response?.data || error.message);
+        throw error;
+    }
+}

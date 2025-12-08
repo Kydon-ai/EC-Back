@@ -2,8 +2,8 @@ import Document from '../models/Document.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import { generateEmbedding, searchSimilarDocuments } from '../services/ragService.js';
 import { generateLLMResponse } from '../services/llmService.js';
-import { getRagflowSSEResponse } from '../services/ragflow/ragflowService.js';
-import Message from '../models/Message.js';
+import { getRagflowSSEResponse, getConversationFromRagflow } from '../services/ragflow/ragflowService.js';
+import Conversation from '../models/Conversation.js';
 
 // 添加文档
 const addDocument = async (req, res) => {
@@ -167,11 +167,20 @@ const generateRAGSSEResponse = async (req, res) => {
     // 记录用户的最新消息
     const userMessage = messages[messages.length - 1];
     if (userMessage.role === 'user') {
-      await Message.create({
-        conversationId: conversation_id,
-        role: userMessage.role,
-        content: userMessage.content
-      });
+      await Conversation.updateOne(
+        { id: conversation_id },
+        {
+          $push: {
+            messages: {
+              role: userMessage.role,
+              content: userMessage.content
+            }
+          },
+          $inc: { message_count: 1 },
+          $set: { updatedAt: Date.now() }
+        },
+        { upsert: false }
+      );
     }
 
     // 设置响应头为SSE格式
@@ -187,6 +196,10 @@ const generateRAGSSEResponse = async (req, res) => {
     let aiResponseContent = '';
     // 缓冲区，用于存储不完整的JSON数据
     let jsonBuffer = '';
+    // 存储完整的消息对象
+    let completeMessageObject = null;
+    // 传输结束标志
+    let isTransferComplete = false;
 
     // 处理流数据
     stream.on('data', (chunk) => {
@@ -214,6 +227,9 @@ const generateRAGSSEResponse = async (req, res) => {
             // 解析JSON
             const responseData = JSON.parse(line);
 
+            // 保存完整的消息对象
+            completeMessageObject = responseData;
+
             // 将数据转发给前端
             res.write(`data: ${JSON.stringify(responseData)}\n\n`);
 
@@ -221,8 +237,15 @@ const generateRAGSSEResponse = async (req, res) => {
             if (responseData.code === 0) {
               const data = responseData.data;
 
+              // 如果data是true，说明是传输结束标志
+              if (data === true) {
+                // 标记传输结束
+                isTransferComplete = true;
+                // 立即处理数据库更新并结束响应
+                return processDatabaseUpdateAndEndResponse();
+              }
               // 如果data不是true且是对象，收集AI的回答
-              if (data !== true && typeof data === 'object' && data !== null && 'answer' in data) {
+              else if (typeof data === 'object' && data !== null && 'answer' in data) {
                 aiResponseContent += data.answer;
               }
             }
@@ -259,6 +282,9 @@ const generateRAGSSEResponse = async (req, res) => {
             // 将数据转发给前端
             res.write(`data: ${JSON.stringify(responseData)}\n\n`);
 
+            // 保存完整的消息对象
+            completeMessageObject = responseData;
+
             // 检查code是否为0表示成功
             if (responseData.code === 0) {
               const data = responseData.data;
@@ -266,6 +292,11 @@ const generateRAGSSEResponse = async (req, res) => {
               // 如果data不是true且是对象，收集AI的回答
               if (data !== true && typeof data === 'object' && data !== null && 'answer' in data) {
                 aiResponseContent += data.answer;
+              }
+              // 检查是否接收到结束标志
+              else if (data === true) {
+                // 标记传输结束
+                isTransferComplete = true;
               }
             }
           } catch (jsonError) {
@@ -275,17 +306,20 @@ const generateRAGSSEResponse = async (req, res) => {
           }
         }
 
-        // 记录AI的回答
-        if (aiResponseContent) {
-          await Message.create({
-            conversationId: conversation_id,
-            role: 'assistant',
-            content: aiResponseContent
-          });
+        // 如果没有标记传输结束（前端中断请求），将最后一条合法解析对象发送给前端
+        if (!isTransferComplete && completeMessageObject) {
+          console.log('前端主动中断请求，发送最后一条合法消息');
         }
+
+        // 无论是否标记传输结束，都需要处理数据库更新（如果有AI回答内容）
+        if (aiResponseContent && !isTransferComplete) {
+          await processDatabaseUpdate();
+        }
+
+        // 结束响应
         res.end();
       } catch (error) {
-        console.error('记录AI回答失败:', error);
+        console.error('流结束处理失败:', error);
         res.end();
       }
     });
@@ -296,12 +330,21 @@ const generateRAGSSEResponse = async (req, res) => {
     stream.on('error', async (error) => {
       console.error('RAGFlow SSE流错误:', error);
       try {
-        await Message.create({
-          conversationId: conversation_id,
-          role: 'assistant',
-          content: '抱歉，服务暂时不可用，请稍后再试。',
-          metadata: { error: error.message }
-        });
+        await Conversation.updateOne(
+          { id: conversation_id },
+          {
+            $push: {
+              messages: {
+                role: 'assistant',
+                content: '抱歉，服务暂时不可用，请稍后再试。',
+                metadata: { error: error.message }
+              }
+            },
+            $inc: { message_count: 1 },
+            $set: { updatedAt: Date.now() }
+          },
+          { upsert: false }
+        );
       } catch (logError) {
         console.error('记录错误消息失败:', logError);
       }
@@ -315,6 +358,65 @@ const generateRAGSSEResponse = async (req, res) => {
       stream.destroy();
       res.end();
     });
+
+    // 处理数据库更新和结束响应的函数
+    async function processDatabaseUpdateAndEndResponse() {
+      try {
+        await processDatabaseUpdate();
+        res.end();
+      } catch (error) {
+        console.error('处理数据库更新和结束响应失败:', error);
+        res.end();
+      }
+    }
+
+    // 处理数据库更新的函数
+    async function processDatabaseUpdate() {
+      if (aiResponseContent) {
+        // 使用流中解析到的完整消息对象来更新数据库
+        let referenceData = [];
+        let updateTime = Date.now();
+        let updateDate = new Date().toISOString().split('T')[0];
+
+        // 如果有完整消息对象，提取reference和时间信息
+        if (completeMessageObject && completeMessageObject.code === 0 && completeMessageObject.data) {
+          const data = completeMessageObject.data;
+          if (data.reference && Array.isArray(data.reference)) {
+            referenceData = data.reference;
+          }
+          if (data.update_time) {
+            updateTime = data.update_time;
+          }
+          if (data.update_date) {
+            updateDate = data.update_date;
+          }
+        }
+
+        // 准备更新数据
+        const updateData = {
+          update_time: updateTime,
+          update_date: updateDate,
+          updatedAt: Date.now()
+        };
+
+        // 更新对话信息
+        await Conversation.updateOne(
+          { id: conversation_id },
+          {
+            $set: updateData,
+            $push: {
+              messages: {
+                role: 'assistant',
+                content: aiResponseContent,
+                reference: referenceData
+              }
+            },
+            $inc: { message_count: 1, reference_count: referenceData.length }
+          },
+          { upsert: false }
+        );
+      }
+    }
 
   } catch (error) {
     console.error('SSE请求处理失败:', error);

@@ -25,4 +25,7 @@ router.post('/conversation/rm', llmController.removeConversations);
 // 获取对话列表
 router.get('/conversation/list', llmController.getConversations);
 
+// 获取对话详情
+router.get('/conversation/get', llmController.getConversation);
+
 export default router;
