@@ -1,6 +1,6 @@
 import Message from '../models/Message.js';
 import { generateLLMResponse } from '../services/llmService.js';
-import { setConversationToRagflow } from '../services/ragflow/ragflowService.js';
+import { setConversationToRagflow, removeConversationsFromRagflow } from '../services/ragflow/ragflowService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // 创建对话
@@ -199,10 +199,42 @@ const setConversation = async (req, res) => {
   }
 };
 
+// 批量删除对话
+const removeConversations = async (req, res) => {
+  try {
+    const { conversation_ids, dialog_id } = req.body;
+
+    // 验证必要参数
+    if (!conversation_ids || !Array.isArray(conversation_ids) || conversation_ids.length === 0) {
+      return res.status(400).json({
+        status: 'error',
+        message: 'conversation_ids必须是一个非空数组'
+      });
+    }
+
+    // 调用RAGFlow的批量删除对话接口
+    const response = await removeConversationsFromRagflow({
+      conversation_ids,
+      dialog_id: dialog_id ? dialog_id : '' // 如果没有提供dialog_id，使用空字符串
+    });
+
+    res.status(200).json({
+      status: 'success',
+      data: response
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export {
   createConversation,
   continueConversation,
   getConversationHistory,
   getUserConversations,
-  setConversation
+  setConversation,
+  removeConversations
 };

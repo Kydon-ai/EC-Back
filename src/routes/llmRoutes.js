@@ -19,4 +19,7 @@ router.get('/conversations', llmController.getUserConversations);
 // 申请一次对话
 router.post('/conversation/set', llmController.setConversation);
 
+// 批量删除对话
+router.post('/conversation/rm', llmController.removeConversations);
+
 export default router;

@@ -205,3 +205,39 @@ export const setConversationToRagflow = async (params) => {
         throw error;
     }
 }
+
+/**
+ * 批量删除RAGFlow中的对话
+ * @param {Object} params - 删除对话的参数
+ * @param {string[]} params.conversation_ids - 要删除的会话ID数组
+ * @param {string} params.dialog_id - 对话ID
+ * @returns {Promise<Object>} - RAGFlow API响应
+ */
+export const removeConversationsFromRagflow = async (params) => {
+    try {
+        const { conversation_ids, dialog_id } = params;
+
+        // 构建请求体，根据curl示例设置参数
+        const requestBody = {
+            conversation_ids,
+            dialog_id
+        };
+
+        const response = await axios.post(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/conversation/rm`,
+            requestBody,
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Content-Type': 'application/json',
+                    'Accept': 'application/json, text/plain, */*'
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow批量删除对话失败:', error.response?.data || error.message);
+        throw error;
+    }
+}
