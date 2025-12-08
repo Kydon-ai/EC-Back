@@ -1,6 +1,7 @@
 import Message from '../models/Message.js';
+import Conversation from '../models/Conversation.js';
 import { generateLLMResponse } from '../services/llmService.js';
-import { setConversationToRagflow, removeConversationsFromRagflow } from '../services/ragflow/ragflowService.js';
+import { setConversationToRagflow, removeConversationsFromRagflow, getConversationsFromRagflow } from '../services/ragflow/ragflowService.js';
 import { v4 as uuidv4 } from 'uuid';
 
 // 创建对话
@@ -230,11 +231,103 @@ const removeConversations = async (req, res) => {
   }
 };
 
+// 获取对话列表
+const getConversations = async (req, res) => {
+  try {
+    let dialog_id = process.env.RAGFLOW_DAILOGE_ID
+    // 调用RAGFlow的获取对话列表接口
+    const response = await getConversationsFromRagflow(dialog_id);
+
+    // 如果RAGFlow返回成功
+    if (response.code === 0 && response.data) {
+      // 将对话信息存储到本地数据库
+      const conversations = response.data;
+
+      // 批量处理对话数据
+      for (const conv of conversations) {
+        try {
+          // 检查对话是否已存在
+          const existingConversation = await Conversation.findOne({ id: conv.id });
+
+          // 准备要存储的数据
+          const conversationData = {
+            id: conv.id,
+            name: conv.name,
+            dialog_id: conv.dialog_id,
+            user_id: conv.user_id,
+            create_time: conv.create_time,
+            update_time: conv.update_time,
+            create_date: conv.create_date,
+            update_date: conv.update_date,
+            message_count: conv.message?.length || 0,
+            reference_count: conv.reference?.length || 0
+          };
+
+          if (existingConversation) {
+            // 更新现有对话
+            await Conversation.updateOne({ id: conv.id }, conversationData);
+          } else {
+            // 创建新对话
+            await Conversation.create(conversationData);
+          }
+
+          // 如果有消息，也存储到Message模型
+          if (conv.message && conv.message.length > 0) {
+            for (const msg of conv.message) {
+              // 检查消息是否已存在（基于conversationId、role和content）
+              const existingMessage = await Message.findOne({
+                conversationId: conv.id,
+                role: msg.role,
+                content: msg.content
+              });
+
+              if (!existingMessage) {
+                await Message.create({
+                  conversationId: conv.id,
+                  role: msg.role,
+                  content: msg.content,
+                  metadata: { reference: msg.reference || [] }
+                });
+              }
+            }
+          }
+        } catch (dbError) {
+          console.error(`处理对话 ${conv.id} 时出错:`, dbError);
+          // 继续处理下一个对话，不中断整个流程
+        }
+      }
+
+      // 从本地数据库获取精简的对话列表
+      const simplifiedConversations = await Conversation.find(
+        { dialog_id },
+        { create_time: 1, update_time: 1, name: 1, id: 1, _id: 0 }
+      ).sort({ update_time: -1 });
+
+      // 返回精简的数据给前端
+      res.status(200).json({
+        code: 0,
+        data: simplifiedConversations,
+        message: 'success'
+      });
+    } else {
+      // 如果RAGFlow返回错误，直接返回给前端
+      res.status(200).json(response);
+    }
+  } catch (error) {
+    console.error('获取对话列表失败:', error);
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export {
   createConversation,
   continueConversation,
   getConversationHistory,
   getUserConversations,
   setConversation,
-  removeConversations
+  removeConversations,
+  getConversations
 };

@@ -241,3 +241,30 @@ export const removeConversationsFromRagflow = async (params) => {
         throw error;
     }
 }
+
+/**
+ * 获取RAGFlow中的对话列表
+ * @param {string} dialog_id - 对话ID
+ * @returns {Promise<Object>} - RAGFlow API响应
+ */
+export const getConversationsFromRagflow = async (dialog_id) => {
+    try {
+        const response = await axios.get(
+            `${RAGFLOW_CONFIG.BASE_URL}/v1/conversation/list`,
+            {
+                headers: {
+                    'Authorization': RAGFLOW_CONFIG.API_KEY,
+                    'Accept': 'application/json, text/plain, */*'
+                },
+                params: {
+                    dialog_id
+                }
+            }
+        );
+
+        return response.data;
+    } catch (error) {
+        console.error('RAGFlow获取对话列表失败:', error.response?.data || error.message);
+        throw error;
+    }
+}
