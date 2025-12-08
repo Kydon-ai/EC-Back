@@ -55,6 +55,7 @@ connectDB();
 import llmRoutes from './src/routes/llmRoutes.js';
 import ragRoutes from './src/routes/ragRoutes.js';
 import knowledgeBaseRoutes from './src/routes/knowledgeBaseRoutes.js';
+import statsRoutes from './src/routes/statsRoutes.js';
 
 // 使用路由
 // 对话
@@ -63,6 +64,8 @@ app.use('/api/llm', llmRoutes);
 app.use('/api/rag', ragRoutes);
 // 知识库
 app.use('/api/knowledge-bases', knowledgeBaseRoutes);
+// 统计
+app.use('/api/stats', statsRoutes);
 
 // 根路径测试接口
 // GET http://localhost:3000/
@@ -76,7 +79,8 @@ app.get('/', (req, res) => {
             '/health',
             '/api/llm/*',
             '/api/rag/*',
-            '/api/knowledge-bases/*'
+            '/api/knowledge-bases/*',
+            '/api/stats/*'
         ]
     });
 });
