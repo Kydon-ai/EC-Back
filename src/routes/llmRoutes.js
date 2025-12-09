@@ -1,7 +1,10 @@
 import express from 'express';
 const router = express.Router();
 import * as llmController from '../controllers/llmController.js';
-import { validateCreateConversation, validateContinueConversation } from '../middleware/validation.js';
+import {
+	validateCreateConversation,
+	validateContinueConversation,
+} from '../middleware/validation.js';
 
 // LLM对话相关路由
 // 创建新对话

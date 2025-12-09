@@ -9,8 +9,8 @@
     "dev": "nodemon index.js",
     "build": "echo \"No build step required\"",
     "test": "echo \"No test specified\" && exit 0",
-    "lint": "echo \"No linter configured\"",
-    "format": "echo \"No formatter configured\""
+    "lint": "eslint src/**/*.js",
+    "format": "prettier --write src/**/*.js"
   },
   "keywords": [],
   "author": "",
@@ -36,6 +36,14 @@
     "winston": "^3.18.3"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "eslint-config-node": "^4.1.0",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-prettier": "^5.5.4",
+    "globals": "^16.5.0",
+    "nodemon": "^3.1.11",
+    "prettier": "^3.7.4"
   }
 }

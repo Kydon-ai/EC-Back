@@ -1,10 +1,10 @@
 import express from 'express';
 import {
-  getConversationStats,
-  getKnowledgeBaseStats,
-  getUserInteractionStats,
-  getAllStats,
-  getQuestionStats
+	getConversationStats,
+	getKnowledgeBaseStats,
+	getUserInteractionStats,
+	getAllStats,
+	getQuestionStats,
 } from '../controllers/statsController.js';
 
 const router = express.Router();

@@ -1,7 +1,10 @@
 import express from 'express';
 const router = express.Router();
 import * as ragController from '../controllers/ragController.js';
-import { validateAddDocument, validateSearchRequest } from '../middleware/validation.js';
+import {
+	validateAddDocument,
+	validateSearchRequest,
+} from '../middleware/validation.js';
 
 // RAG服务相关路由
 // 添加文档

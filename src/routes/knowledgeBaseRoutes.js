@@ -28,15 +28,24 @@ router.put('/:id', knowledgeBaseController.updateKnowledgeBase);
 router.delete('/:id', knowledgeBaseController.deleteKnowledgeBase);
 
 // 为知识库添加文档——单文档
-router.post('/:knowledgeBaseId/documents', upload.single('file'), knowledgeBaseController.addDocumentToKnowledgeBase);
+router.post(
+	'/:knowledgeBaseId/documents',
+	upload.single('file'),
+	knowledgeBaseController.addDocumentToKnowledgeBase
+);
 // 批量上传文件到知识库——多文档（有BUG,最后调整）
 // router.post('/:knowledgeBaseId/batch-upload', upload.array('files'), knowledgeBaseController.batchUploadToKnowledgeBase);
 
 // 获取知识库中的文档
-router.get('/:knowledgeBaseId/documents', knowledgeBaseController.getDocumentsInKnowledgeBase);
+router.get(
+	'/:knowledgeBaseId/documents',
+	knowledgeBaseController.getDocumentsInKnowledgeBase
+);
 
 // 从知识库中移除文档
-router.delete('/:knowledgeBaseId/remove-document/:documentId', knowledgeBaseController.removeDocumentFromKnowledgeBase);
-
+router.delete(
+	'/:knowledgeBaseId/remove-document/:documentId',
+	knowledgeBaseController.removeDocumentFromKnowledgeBase
+);
 
 export default router;
