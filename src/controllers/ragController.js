@@ -4,6 +4,7 @@ import { generateEmbedding, searchSimilarDocuments } from '../services/ragServic
 import { generateLLMResponse } from '../services/llmService.js';
 import { getRagflowSSEResponse, getConversationFromRagflow } from '../services/ragflow/ragflowService.js';
 import Conversation from '../models/Conversation.js';
+import QuestionCount from '../models/QuestionCount.js';
 
 // 添加文档
 const addDocument = async (req, res) => {
@@ -180,6 +181,16 @@ const generateRAGSSEResponse = async (req, res) => {
           $set: { updatedAt: Date.now() }
         },
         { upsert: false }
+      );
+
+      // 更新问题计数
+      await QuestionCount.updateOne(
+        { question: userMessage.content },
+        {
+          $inc: { count: 1 },
+          $set: { lastAskedAt: Date.now(), updatedAt: Date.now() }
+        },
+        { upsert: true }
       );
     }
 
@@ -415,6 +426,18 @@ const generateRAGSSEResponse = async (req, res) => {
           },
           { upsert: false }
         );
+
+        // 检查是否为零命中回答
+        if (aiResponseContent.includes('未找到')) {
+          await QuestionCount.updateOne(
+            { question: userMessage.content },
+            {
+              $inc: { zeroHitCount: 1 },
+              $set: { updatedAt: Date.now() }
+            },
+            { upsert: true }
+          );
+        }
       }
     }
 

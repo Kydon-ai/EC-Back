@@ -3,7 +3,8 @@ import {
   getConversationStats,
   getKnowledgeBaseStats,
   getUserInteractionStats,
-  getAllStats
+  getAllStats,
+  getQuestionStats
 } from '../controllers/statsController.js';
 
 const router = express.Router();
@@ -19,5 +20,8 @@ router.get('/user-interactions', getUserInteractionStats);
 
 // 综合统计接口
 router.get('/all', getAllStats);
+
+// 问题计数统计接口
+router.get('/questions', getQuestionStats);
 
 export default router;

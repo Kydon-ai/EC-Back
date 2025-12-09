@@ -1,6 +1,7 @@
 import Conversation from '../models/Conversation.js';
 import KnowledgeBase from '../models/KnowledgeBase.js';
 import Document from '../models/Document.js';
+import QuestionCount from '../models/QuestionCount.js';
 
 // 获取对话统计信息
 const getConversationStats = async (req, res) => {
@@ -351,9 +352,71 @@ const getAllStats = async (req, res) => {
   }
 };
 
+// 获取问题计数统计信息
+const getQuestionStats = async (req, res) => {
+  try {
+    // 获取所有问题计数，按count降序排序
+    const questionStats = await QuestionCount.find()
+      .sort({ count: -1 })
+      .select('question count zeroHitCount lastAskedAt createdAt')
+      .limit(100); // 限制返回前100个最常问的问题
+
+    // 处理每个问题，添加零命中率
+    const processedQuestions = questionStats.map(question => {
+      // 计算零命中率
+      const zeroHitRate = question.count > 0 ? (question.zeroHitCount / question.count * 100).toFixed(2) : 0;
+
+      return {
+        question: question.question,
+        count: question.count,
+        zeroHitCount: question.zeroHitCount,
+        zeroHitRate: parseFloat(zeroHitRate),
+        lastAskedAt: question.lastAskedAt,
+        createdAt: question.createdAt
+      };
+    });
+
+    // 计算总问题数和总零命中数
+    const statsSummary = await QuestionCount.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalQuestions: { $sum: 1 },
+          totalQuestionAsks: { $sum: '$count' },
+          totalZeroHits: { $sum: '$zeroHitCount' }
+        }
+      }
+    ]);
+
+    // 计算总零命中率
+    const totalZeroHitRate = statsSummary[0] && statsSummary[0].totalQuestionAsks > 0
+      ? (statsSummary[0].totalZeroHits / statsSummary[0].totalQuestionAsks * 100).toFixed(2)
+      : 0;
+
+    res.status(200).json({
+      status: 'success',
+      data: {
+        questions: processedQuestions,
+        summary: {
+          totalQuestions: statsSummary[0]?.totalQuestions || 0,
+          totalQuestionAsks: statsSummary[0]?.totalQuestionAsks || 0,
+          totalZeroHits: statsSummary[0]?.totalZeroHits || 0,
+          totalZeroHitRate: parseFloat(totalZeroHitRate)
+        }
+      }
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: 'error',
+      message: error.message
+    });
+  }
+};
+
 export {
   getConversationStats,
   getKnowledgeBaseStats,
   getUserInteractionStats,
-  getAllStats
+  getAllStats,
+  getQuestionStats
 };
