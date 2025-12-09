@@ -5,6 +5,7 @@
 ## 项目概述
 
 本项目是一个基于Node.js的后端服务，主要提供以下功能：
+
 - LLM对话服务：支持创建对话、继续对话、获取对话历史等功能
 - RAG服务：支持文档管理、文档搜索、基于检索增强生成等功能
 - 数据存储：使用MongoDB存储对话记录和文档内容
@@ -71,7 +72,6 @@ pnpm dev
 pnpm start
 ```
 
-
 ## 项目结构
 
 ```
@@ -133,3 +133,5 @@ EC-Back/
 ## 许可证
 
 MIT
+
+> 注：该项目基于[ragflow]:(https://github.com/infiniflow/ragflow)提供RAG服务
