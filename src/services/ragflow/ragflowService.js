@@ -18,26 +18,33 @@ export const uploadDocumentToRagflow = async (file, knowledgeBaseId) => {
         const formData = new FormData();
 
         // 添加文件到表单
+        // cite:https://www.cnblogs.com/ljbguanli/p/19097607
         formData.append('file', file.buffer, {
-            filename: file.originalname,
+            filename: Buffer.from(file.originalname, "latin1").toString("utf8"),
             contentType: file.mimetype
         });
 
         // 添加知识库ID
         formData.append('kb_id', knowledgeBaseId);
 
-        // 发送请求到RAGFlow
+        // 发送请求到RAGFlow，确保使用UTF-8编码
+        const headers = formData.getHeaders();
+        // 修改Content-Type头，添加charset=utf-8
+        if (headers['Content-Type']) {
+            headers['Content-Type'] = headers['Content-Type'] + '; charset=utf-8';
+        }
+
         const response = await axios.post(
             `${RAGFLOW_CONFIG.BASE_URL}/v1/document/upload`,
             formData,
             {
                 headers: {
                     'Authorization': RAGFLOW_CONFIG.API_KEY,
-                    ...formData.getHeaders()
+                    ...headers
                 }
             }
         );
-
+        console.log("查看响应：", response)
         return response.data;
     } catch (error) {
         console.error('RAGFlow上传文档失败:', error.response?.data || error.message);

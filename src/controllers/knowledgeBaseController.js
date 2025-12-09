@@ -24,7 +24,7 @@ const createKnowledgeBase = async (req, res) => {
 
     // 调用RAGFlow创建知识库
     const ragflowResponse = await createKnowledgeBaseToRagflow(name);
-
+    console.log("查看ragflowResponse：", ragflowResponse)
     // 获取RAGFlow返回的知识库ID
     const dataset_id = ragflowResponse.data.kb_id;
 
