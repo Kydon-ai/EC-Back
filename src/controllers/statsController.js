@@ -456,8 +456,8 @@ const getQuestionStats = async (req, res) => {
 			const zeroHitRate =
 				question.count > 0
 					? ((question.zeroHitCount / question.count) * 100).toFixed(
-						2
-					)
+							2
+						)
 					: 0;
 
 			return {
@@ -486,10 +486,10 @@ const getQuestionStats = async (req, res) => {
 		const totalZeroHitRate =
 			statsSummary[0] && statsSummary[0].totalQuestionAsks > 0
 				? (
-					(statsSummary[0].totalZeroHits /
-						statsSummary[0].totalQuestionAsks) *
-					100
-				).toFixed(2)
+						(statsSummary[0].totalZeroHits /
+							statsSummary[0].totalQuestionAsks) *
+						100
+					).toFixed(2)
 				: 0;
 
 		res.status(200).json({

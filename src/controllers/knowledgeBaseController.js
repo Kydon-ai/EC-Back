@@ -1,5 +1,6 @@
 import mongoose from 'mongoose';
 import { v4 as uuidv4 } from 'uuid';
+import axios from 'axios';
 import {
 	uploadDocumentToRagflow,
 	removeDocumentFromRagflow,
@@ -268,6 +269,31 @@ const addDocumentToKnowledgeBase = async (req, res) => {
 		// 获取RAGFlow返回的文档ID
 		const ragflowDocumentId = ragflowResponse.data[0].id;
 
+		// 调用文档解析接口
+		try {
+			const runResponse = await axios.post(
+				'http://172.31.136.239:3055/v1/document/run',
+				{
+					doc_ids: [ragflowDocumentId],
+					run: 1,
+					delete: false,
+				},
+				{
+					headers: {
+						Authorization: process.env.RAGFLOW_API_KEY,
+						'Content-Type': 'application/json;charset=UTF-8',
+					},
+				}
+			);
+			console.log('文档解析接口调用成功：', runResponse.data);
+		} catch (runError) {
+			console.error(
+				'文档解析接口调用失败:',
+				runError.response?.data || runError.message
+			);
+			// 解析失败不影响上传结果，继续返回上传成功
+		}
+
 		// 创建文档（使用RAGFlow返回的ID作为UUID，不包含内容和嵌入，由RAGFlow后续解析）
 		const document = await Document.create({
 			uuid: ragflowDocumentId,
@@ -459,6 +485,32 @@ const batchUploadToKnowledgeBase = async (req, res) => {
 
 				// 获取RAGFlow返回的文档ID
 				const ragflowDocumentId = ragflowResponse.data.data[0].id;
+
+				// 调用文档解析接口
+				try {
+					const runResponse = await axios.post(
+						'http://172.31.136.239:3055/v1/document/run',
+						{
+							doc_ids: [ragflowDocumentId],
+							run: 1,
+							delete: false,
+						},
+						{
+							headers: {
+								Authorization: process.env.RAGFLOW_API_KEY,
+								'Content-Type':
+									'application/json;charset=UTF-8',
+							},
+						}
+					);
+					console.log('文档解析接口调用成功：', runResponse.data);
+				} catch (runError) {
+					console.error(
+						'文档解析接口调用失败:',
+						runError.response?.data || runError.message
+					);
+					// 解析失败不影响上传结果，继续返回上传成功
+				}
 
 				// 创建文档（使用RAGFlow返回的ID作为UUID，不包含内容和嵌入，由RAGFlow后续解析）
 				const document = await Document.create({

@@ -46,6 +46,7 @@ export const uploadDocumentToRagflow = async (file, knowledgeBaseId) => {
 			}
 		);
 		console.log('查看响应：', response);
+
 		return response.data;
 	} catch (error) {
 		console.error(

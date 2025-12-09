@@ -17,7 +17,11 @@ NodeJS、MongoDB、TS、RAGFlow <br>
 ## 其他参考资料
 
 (1)https://www.bilibili.com/video/BV1zi1vByEjg
+nodejs默认不配置解码的解决方案
+(2)https://www.cnblogs.com/ljbguanli/p/19097607
 
 ## TODO List
 
 -[] 1) 最后删除生成的无用接口
+-[] 2) 更新后端启动说明文档
+-[] 3) 更新后台接口说明文档
